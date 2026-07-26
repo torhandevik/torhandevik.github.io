@@ -620,28 +620,36 @@ function renderSpel() {
         el("button", { class: "btn btn-secondary", style: "min-height:36px;font-size:15px", text: "Ställning", onClick: () => set({ screen: "stallning" }) })
       ])
     ]),
-    el("div", { class: "game-body" }, [
+    // Fixed top zone: who's throwing + pin grid + register button
+    el("div", { class: "game-fixed" }, [
       el("div", { class: "turn" }, [
         el("span", { class: "kicker", text: "Tur" }),
         el("span", { class: "name", text: cur.name }),
         el("span", { class: "pts", text: cur.score + " p" })
       ]),
-      el("div", { class: "standings" }, standings),
       el("div", { class: "banner" + (b ? " is-shown tone-" + b.tone : "") }, [
         el("span", { style: "font-size:20px", text: b ? b.icon : "" }),
         el("span", { text: b ? b.text : "" })
       ]),
-      el("div", { class: "pins" }, pins)
+      el("div", { class: "pins" }, pins),
+      el("div", { class: "throw-actions" }, [
+        el("div", { class: "helper", text: helper }),
+        el("div", { class: "throw-row" }, [
+          state.pins.length ? el("button", { class: "btn btn-secondary btn-clear", text: "Rensa", onClick: () => set({ pins: [] }) }) : null,
+          el("button", { class: "btn btn-primary btn-register",
+            text: state.pins.length === 0 ? "Bom" : "Registrera " + points + " poäng",
+            onClick: () => registerThrow(points) })
+        ]),
+        el("button", { class: "btn btn-ghost btn-block btn-undo", text: "↩ Ångra senaste kastet", onClick: undo })
+      ])
     ]),
-    el("div", { class: "throw-actions" }, [
-      el("div", { class: "helper", text: helper }),
-      el("div", { class: "throw-row" }, [
-        state.pins.length ? el("button", { class: "btn btn-secondary btn-clear", text: "Rensa", onClick: () => set({ pins: [] }) }) : null,
-        el("button", { class: "btn btn-primary btn-register",
-          text: state.pins.length === 0 ? "Bom" : "Registrera " + points + " poäng",
-          onClick: () => registerThrow(points) })
+    // Scrollable standings below
+    el("div", { class: "game-scroll" }, [
+      el("div", { class: "game-scroll-head" }, [
+        label("Ställning"),
+        el("button", { class: "btn btn-ghost", style: "min-height:34px;font-size:14px", text: "Detaljer →", onClick: () => set({ screen: "stallning" }) })
       ]),
-      el("button", { class: "btn btn-ghost btn-block btn-undo", text: "↩ Ångra senaste kastet", onClick: undo })
+      el("div", { class: "standings" }, standings)
     ])
   ]);
 }
