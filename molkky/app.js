@@ -194,9 +194,23 @@ function finish(g) {
   archiveGame(g);
 }
 
+let _throwing = false;
 function registerThrow(points) {
+  if (_throwing) return;   // ignore rapid re-entrant taps
+  _throwing = true;
+  try {
   const g = clone(state.game);
-  const snapshot = clone(state.game);
+  // Snapshot only the fields needed to undo — NOT the full history array —
+  // to avoid O(n²) memory growth from nested clones.
+  const snapshot = {
+    players: clone(g.players),
+    turn: g.turn, round: g.round,
+    winners: g.winners ? g.winners.slice() : [],
+    winner: g.winner,
+    playThrough: g.playThrough,
+    roundEndPrompt: g.roundEndPrompt,
+    finished: g.finished
+  };
   const p = g.players[g.turn];
   let banner;
 
@@ -227,7 +241,9 @@ function registerThrow(points) {
   // Tag milestone events so the throw history can highlight them.
   const logTag = p.out ? "out" : (p.done ? (g.playThrough ? "done" : "win") : null);
   g.log.unshift({ id: p.id, name: p.name, pins: state.pins.slice(), points, score: p.score, round: g.round, tag: logTag });
+  // Cap undo history — keeps only the last 20 snapshots to bound memory use.
   g.history.push(snapshot);
+  if (g.history.length > 20) g.history.shift();
 
   const wrapped = advance(g);
   const left = active(g);
@@ -261,6 +277,9 @@ function registerThrow(points) {
     game: g, pins: [], banner,
     screen: g.finished ? "slut" : (g.roundEndPrompt ? "rondslut" : state.screen)
   });
+  } finally {
+    _throwing = false;
+  }
 }
 
 // The remaining players choose to keep playing after a round-end prompt.
@@ -281,9 +300,20 @@ function endGameNow() {
 function undo() {
   const g = state.game;
   if (!g || !g.history.length) return;
-  const prev = g.history[g.history.length - 1];
-  prev.history = g.history.slice(0, -1);
-  set({ game: prev, pins: [], banner: null, screen: "spel" });
+  const snap = g.history[g.history.length - 1];
+  // Restore game state from the slim snapshot, keeping unchanged fields intact.
+  const restored = clone(g);
+  restored.players        = clone(snap.players);
+  restored.turn           = snap.turn;
+  restored.round          = snap.round;
+  restored.winners        = snap.winners ? snap.winners.slice() : [];
+  restored.winner         = snap.winner;
+  restored.playThrough    = snap.playThrough;
+  restored.roundEndPrompt = snap.roundEndPrompt;
+  restored.finished       = snap.finished;
+  restored.history        = g.history.slice(0, -1);
+  restored.log            = g.log.slice(1);   // remove the last log entry
+  set({ game: restored, pins: [], banner: null, screen: "spel" });
 }
 
 // Manual correction from Ställning — scores are edited by hand, nothing else changes.
