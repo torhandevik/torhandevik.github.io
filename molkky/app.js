@@ -386,6 +386,41 @@ function stepper(title, value, dec, inc) {
   ]);
 }
 
+
+// Build both score steppers sharing refs so clicking either updates both values
+// in-place (no re-render, no rise animation).
+function scoreSteppers() {
+  const maxVal  = el("span", { class: "val", text: String(state.maxScore) });
+  const rstVal  = el("span", { class: "val", text: String(state.resetScore) });
+  const update  = () => {
+    maxVal.textContent = String(state.maxScore);
+    rstVal.textContent = String(state.resetScore);
+  };
+  const clamp   = () => {
+    if (state.resetScore >= state.maxScore) {
+      state.resetScore = state.maxScore - 5;
+    }
+  };
+  const mkBtn   = (label, ariaLabel, fn) => el("button", { text: label, "aria-label": ariaLabel,
+    onClick: () => { fn(); clamp(); save(); update(); } });
+  const maxStepper = el("div", { class: "stepper" }, [
+    el("h4", { text: "Maxpoäng" }),
+    el("div", { class: "row" }, [
+      mkBtn("−", "Minska Maxpoäng",    () => { state.maxScore  = Math.max(20,  state.maxScore  - 5); }),
+      maxVal,
+      mkBtn("+", "Öka Maxpoäng",       () => { state.maxScore  = Math.min(100, state.maxScore  + 5); })
+    ])
+  ]);
+  const rstStepper = el("div", { class: "stepper" }, [
+    el("h4", { text: "Återställning" }),
+    el("div", { class: "row" }, [
+      mkBtn("−", "Minska Återställning", () => { state.resetScore = Math.max(0, state.resetScore - 5); }),
+      rstVal,
+      mkBtn("+", "Öka Återställning",    () => { state.resetScore = Math.min(state.maxScore - 5, state.resetScore + 5); })
+    ])
+  ]);
+  return el("div", { class: "steppers" }, [maxStepper, rstStepper]);
+}
 // Move an entry in state.order from index `from` to index `to`, then persist + re-render.
 function reorderOrder(from, to) {
   if (from === to || from == null || to == null) return;
@@ -521,14 +556,7 @@ function renderNytt() {
         ]),
         el("div", { class: "panel" }, rows)
       ]),
-      el("div", { class: "steppers" }, [
-        stepper("Maxpoäng", state.maxScore,
-          () => set({ maxScore: Math.max(20, state.maxScore - 5) }),
-          () => set({ maxScore: Math.min(100, state.maxScore + 5) })),
-        stepper("Återställning", state.resetScore,
-          () => set({ resetScore: Math.max(0, state.resetScore - 5) }),
-          () => set({ resetScore: Math.min(state.maxScore - 5, state.resetScore + 5) }))
-      ])
+      scoreSteppers()
     ]),
     el("div", { class: "footer-actions" }, [
       el("button", { class: "btn btn-primary btn-block", style: "min-height:64px;font-size:22px;font-weight:800",
@@ -930,14 +958,7 @@ function renderInstallningar() {
     el("div", { class: "body-scroll" }, [
       el("div", { class: "group" }, [
         label("Standard för nya spel"),
-        el("div", { class: "steppers" }, [
-          stepper("Maxpoäng", state.maxScore,
-            () => set({ maxScore: Math.max(20, state.maxScore - 5) }),
-            () => set({ maxScore: Math.min(100, state.maxScore + 5) })),
-          stepper("Återställning", state.resetScore,
-            () => set({ resetScore: Math.max(0, state.resetScore - 5) }),
-            () => set({ resetScore: Math.min(state.maxScore - 5, state.resetScore + 5) }))
-        ])
+        scoreSteppers()
       ]),
       el("div", { class: "group" }, [
         label("Regler"),
