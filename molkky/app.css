@@ -6,18 +6,21 @@ html, body { margin: 0; background: var(--color-bg); font-family: var(--font-bod
 button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
 button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
-#app { position: relative; width: 100%; max-width: 480px; min-height: 100vh; min-height: 100dvh; margin: 0 auto; overflow: hidden; }
+#app { position: relative; width: 100%; max-width: 480px; height: 100vh; height: 100svh; margin: 0 auto; overflow: hidden; display: flex; flex-direction: column; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes pop  { from { transform: scale(.86); } to { transform: scale(1); } }
 
-.scr { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; animation: rise .28s ease both; }
+.scr { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.scr-enter { animation: rise .28s ease both; }
 
 /* ---------- Hem ---------- */
 .hem { justify-content: center; gap: 14px; padding: 64px 26px calc(40px + env(safe-area-inset-bottom)); }
-.blob { position: absolute; border-radius: 999px; pointer-events: none; }
+.blob { position: absolute; border-radius: 999px; pointer-events: none; z-index: 0; }
 .blob-a { top: -70px; right: -60px; width: 230px; height: 230px; background: var(--color-accent-200); }
 .blob-b { bottom: -90px; left: -70px; width: 260px; height: 260px; background: var(--color-accent-2-200); }
+.slut .body-scroll { position: relative; z-index: 1; }
+.slut .footer-actions { position: relative; z-index: 1; }
 .hem > header, .hem > .resume-card, .hem > .btn { position: relative; }
 .wordmark { font-family: var(--font-heading); font-size: 62px; line-height: 1; }
 .tagline { font-size: 17px; color: var(--color-neutral-700); }
@@ -62,6 +65,7 @@ button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2
 /* ---------- Spel ---------- */
 .game-top { display: flex; align-items: center; justify-content: space-between; padding: calc(20px + env(safe-area-inset-top)) 22px 10px; }
 .round { font-family: var(--font-heading); font-size: 24px; }
+.game-rules { font-size: 13px; font-weight: 600; color: var(--color-neutral-700); margin-top: 2px; }
 .game-body { padding: 0 22px; display: flex; flex-direction: column; gap: 10px; flex: 1; overflow: hidden; }
 .turn { background: var(--color-accent-200); border-radius: var(--radius-lg); padding: 10px 20px; display: flex; align-items: center; gap: 12px; flex: none; }
 .turn .kicker { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--color-accent-700); }
@@ -77,6 +81,7 @@ button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2
 .st-row.is-current .st-name { font-weight: 800; }
 .st-tag { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; padding: 2px 9px; border-radius: 999px; background: var(--color-neutral-300); color: var(--color-neutral-700); }
 .st-tag.is-done { background: var(--color-accent-2-300); color: var(--color-accent-2-800); }
+.st-tag.is-out  { background: var(--color-accent-200); color: var(--color-accent-800); }
 .st-delta { font-size: 14px; font-weight: 800; color: var(--color-accent-700); }
 .st-score { font-family: var(--font-heading); font-size: 20px; min-width: 34px; text-align: right; }
 .banner { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 18px; border-radius: var(--radius-lg); font-size: 16px; font-weight: 700; color: var(--color-neutral-900); flex: none; background: transparent; }
@@ -119,16 +124,16 @@ button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2
 .adj button { width: 44px; height: 44px; border-radius: 999px; font-size: 24px; background: var(--color-neutral-200); color: var(--color-text); }
 .adj button:hover { background: var(--color-neutral-300); }
 .adj-val { font-family: var(--font-heading); font-size: 22px; min-width: 38px; text-align: center; }
-.log-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--color-divider); font-size: 15px; }
+.log-row { display: flex; align-items: center; gap: 6px; padding: 9px 0; border-bottom: 1px solid var(--color-divider); font-size: 14px; flex-wrap: wrap; }
 .log-row:last-child { border-bottom: none; }
-.log-round { font-size: 12px; font-weight: 800; letter-spacing: .04em; color: var(--color-neutral-600); min-width: 26px; }
-.log-name { font-weight: 700; min-width: 74px; }
-.log-pins { flex: 1; color: var(--color-neutral-700); }
-.log-pts { font-family: var(--font-heading); font-size: 18px; color: var(--color-accent-700); }
+.log-round { font-size: 11px; font-weight: 800; letter-spacing: .04em; color: var(--color-neutral-600); min-width: 24px; }
+.log-name { font-weight: 700; min-width: 60px; }
+.log-pins { flex: 1; color: var(--color-neutral-700); min-width: 0; }
+.log-pts { font-family: var(--font-heading); font-size: 16px; color: var(--color-accent-700); white-space: nowrap; }
 .log-pts.is-zero { color: var(--color-neutral-500); }
 
 /* ---------- Slut ---------- */
-.slut { justify-content: center; gap: 16px; padding: 40px 26px calc(24px + env(safe-area-inset-bottom)); }
+.slut { gap: 0; position: relative; overflow: hidden; }
 .win-card { position: relative; background: var(--color-accent-2-200); border-radius: var(--radius-lg); padding: 26px 24px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-sm); animation: pop .24s ease; }
 .win-card .eyebrow { color: var(--color-accent-2-800); }
 .win-name { font-family: var(--font-heading); font-size: 44px; line-height: 1.05; }
@@ -159,7 +164,8 @@ button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2
 .arch-meta { font-size: 14px; color: var(--color-neutral-700); }
 .arch-scores { display: flex; flex-wrap: wrap; gap: 6px; }
 .score-chip { padding: 4px 12px; border-radius: 999px; background: var(--color-neutral-200); color: var(--color-neutral-800); font-size: 14px; font-weight: 600; }
-.score-chip.is-win { background: var(--color-accent-200); color: var(--color-accent-800); font-weight: 800; }
+.score-chip.is-win { background: var(--color-accent-2-200); color: var(--color-accent-2-800); font-weight: 800; }
+.score-chip.is-out { background: var(--color-accent-200); color: var(--color-accent-800); font-weight: 800; }
 
 /* ---------- Inställningar ---------- */
 .sw-row { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--color-divider); text-align: left; width: 100%; }

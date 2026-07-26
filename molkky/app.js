@@ -114,6 +114,9 @@ function wipeAllData() {
 }
 
 const set = patch => { Object.assign(state, patch); save(); render(); };
+// Like `set` but without re-rendering — used for live text input so the DOM
+// (and the `rise` animation / viewport height) doesn't churn on every keystroke.
+const setQuiet = patch => { Object.assign(state, patch); save(); };
 
 /* ---------- Rules ---------- */
 
@@ -182,8 +185,12 @@ function archiveGame(g) {
 function finish(g) {
   g.finished = true;
   g.roundEndPrompt = false;
-  g.winners = winners(g).map(p => p.id);
-  g.winner = g.winners[0] || null;
+  // If winners were already locked in at the round-end prompt (playThrough),
+  // keep them. Otherwise derive from whoever reached max now.
+  if (!g.winners || !g.winners.length) {
+    g.winners = winners(g).map(p => p.id);
+    g.winner = g.winners[0] || null;
+  }
   archiveGame(g);
 }
 
@@ -210,28 +217,43 @@ function registerThrow(points) {
       banner = { icon: "↩", text: p.name + " gick över " + g.max + " – tillbaka till " + g.reset, tone: "warn" };
     } else if (next === g.max) {
       p.score = next; p.done = true;
-      banner = { icon: "★", text: p.name + " är i mål! Snyggt kast!", tone: "win" };
+      banner = { icon: "🏆", text: p.name + " är i mål! Snyggt kast!", tone: "win" };
     } else {
       p.score = next;
       banner = { icon: "✓", text: (points >= 8 ? "Snyggt kast! " : "") + p.name + " +" + points, tone: "good" };
     }
   }
 
-  g.log.unshift({ id: p.id, name: p.name, pins: state.pins.slice(), points, score: p.score, round: g.round });
+  // Tag milestone events so the throw history can highlight them.
+  const logTag = p.out ? "out" : (p.done ? (g.playThrough ? "done" : "win") : null);
+  g.log.unshift({ id: p.id, name: p.name, pins: state.pins.slice(), points, score: p.score, round: g.round, tag: logTag });
   g.history.push(snapshot);
 
   const wrapped = advance(g);
   const left = active(g);
   const anyDone = winners(g).length > 0;
 
-  if (left.length === 0) {
+  if (wrapped && left.length === 0) {
+    // Everyone is out — end with no winner.
     finish(g);
-  } else if (left.length === 1 && !anyDone) {
-    // Classic knockout: a lone survivor with no finisher wins outright.
-    g.players.forEach(pl => { if (pl.id === left[0].id) pl.done = true; });
+  } else if (wrapped && left.length === 1 && !anyDone) {
+    // Round completed with one survivor. Only a winner if they scored > 0.
+    // A survivor still on 0 points means nobody ever scored — all lose.
+    if (left[0].score > 0) {
+      g.players.forEach(pl => { if (pl.id === left[0].id) pl.done = true; });
+    }
+    finish(g);
+  } else if (wrapped && anyDone && left.length <= 1) {
+    // A round finished with a finisher and at most one player is still in play.
+    // Don't prompt (nothing to decide) and, in continued play, this is the
+    // all-but-one-reached-max end condition — end the game now.
     finish(g);
   } else if (wrapped && anyDone && !g.playThrough) {
-    // A round finished with a finisher — ask once whether to play on.
+    // A round finished with a finisher and 2+ players still in play — ask once
+    // whether to play on. Lock in the winners right now so that players who
+    // reach max during continued play are not counted as additional winners.
+    g.winners = winners(g).map(p => p.id);
+    g.winner = g.winners[0] || null;
     g.roundEndPrompt = true;
   }
 
@@ -299,11 +321,27 @@ const label = t => el("div", { class: "label", text: t });
 const empty = t => el("div", { class: "empty", text: t });
 const initials = n => n.trim().charAt(0).toUpperCase();
 const dateSv = iso => new Date(iso).toLocaleDateString("sv-SE", { day: "numeric", month: "short", year: "numeric" });
+// yyyy-MM-dd HH:mm — used in game history to show when a game started.
+const dateTimeSv = iso => new Date(iso).toLocaleString("sv-SE", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 
+let lastScreen = null;
+// Render the milestone badge for a throw-history row.
+const logTagEl = tag => {
+  if (!tag) return null;
+  if (tag === "win")  return el("span", { class: "st-tag is-done", text: "🏆 I mål" });
+  if (tag === "done") return el("span", { class: "st-tag is-done", text: "I mål" });
+  if (tag === "out")  return el("span", { class: "st-tag is-out",  text: "Utslagen" });
+  return null;
+};
 function render() {
   const screens = { hem: renderHem, nytt: renderNytt, spel: renderSpel, stallning: renderStallning,
     rondslut: renderRondslut, slut: renderSlut, spelare: renderSpelare, historik: renderHistorik, installningar: renderInstallningar };
-  app.replaceChildren((screens[state.screen] || renderHem)());
+  const node = (screens[state.screen] || renderHem)();
+  // Only play the entrance animation when the screen actually changes — not on
+  // in-screen re-renders (chip toggles, steppers, etc.) — so the page doesn't jump.
+  if (state.screen !== lastScreen) node.classList.add("scr-enter");
+  lastScreen = state.screen;
+  app.replaceChildren(node);
   if (state.focusKey) {
     const node = app.querySelector('[data-focus="' + state.focusKey + '"]');
     if (node) { node.focus(); if (node.setSelectionRange) node.setSelectionRange(9999, 9999); }
@@ -504,8 +542,8 @@ function renderNytt() {
 /* ---------- Spel ---------- */
 
 function statusTag(p) {
-  if (p.out) return { text: "Utslagen", cls: "" };
-  if (p.done) return { text: "I mål", cls: " is-done" };
+  if (p.out) return { text: "Utslagen", cls: " is-out" };
+  if (p.done) return { text: "🏆 I mål", cls: " is-done" };
   if (p.misses > 0) return { text: p.misses + " bom", cls: "" };
   return null;
 }
@@ -545,7 +583,10 @@ function renderSpel() {
 
   return el("section", { class: "scr" }, [
     el("div", { class: "game-top" }, [
-      el("div", { class: "round", text: "Omgång " + g.round }),
+      el("div", {}, [
+        el("div", { class: "round", text: "Omgång " + g.round }),
+        el("div", { class: "game-rules", text: "Mål " + g.max + " p · Retur " + g.reset + " p" })
+      ]),
       el("div", { style: "display:flex;align-items:center;gap:10px" }, [
         el("button", { class: "btn btn-ghost", style: "min-height:36px;font-size:15px", text: "Hem", onClick: () => set({ screen: "hem" }) }),
         el("button", { class: "btn btn-secondary", style: "min-height:36px;font-size:15px", text: "Ställning", onClick: () => set({ screen: "stallning" }) })
@@ -606,7 +647,8 @@ function renderStallning() {
     el("span", { class: "log-round", text: "O" + t.round }),
     el("span", { class: "log-name", text: t.name }),
     el("span", { class: "log-pins", text: t.pins.length ? "kägla " + t.pins.join(", ") : "bom" }),
-    el("span", { class: "log-pts" + (t.points ? "" : " is-zero"), text: (t.points ? "+" + t.points : "0") })
+    logTagEl(t.tag),
+    el("span", { class: "log-pts" + (t.points ? "" : " is-zero"), text: (t.points ? "+" + t.points : "0") + " → " + t.score + " p" })
   ])) : [empty("Inga kast registrerade än.")];
 
   return el("section", { class: "scr" }, [
@@ -644,9 +686,9 @@ function renderRondslut() {
   const shared = done.length > 1;
 
   const doneRows = done.map(p => el("div", { class: "rank-row is-win" }, [
-    el("span", { class: "st-mark", style: "width:20px;font-size:18px", text: "★" }),
+    el("span", { class: "st-mark", style: "width:20px;font-size:18px", text: "🏆" }),
     el("span", { class: "rank-name", text: p.name }),
-    el("span", { class: "st-tag is-done", text: "I mål" }),
+    el("span", { class: "st-tag is-done", text: "🏆 I mål" }),
     el("span", { class: "rank-score", text: p.score + " p" })
   ]));
 
@@ -662,18 +704,23 @@ function renderRondslut() {
 
   return el("section", { class: "scr slut" }, [
     el("div", { class: "blob blob-a" }), el("div", { class: "blob blob-b" }),
-    el("div", { class: "win-card" }, [
-      el("div", { class: "eyebrow", text: "Omgången slutspelad" }),
-      el("div", { class: "win-name", style: "font-size:34px", text: heading }),
-      el("div", { class: "win-sub", text: shared
-        ? "Delad vinst så här långt. Vill de återstående spela vidare?"
-        : "Vill de återstående spelarna spela vidare?" })
+    el("div", { class: "body-scroll" }, [
+      el("div", { class: "win-card" }, [
+        el("div", { class: "eyebrow", text: "Omgången slutspelad" }),
+        el("div", { class: "win-name", style: "font-size:34px", text: heading }),
+        el("div", { class: "win-sub", text: shared
+          ? "Delad vinst så här långt. Vill de återstående spela vidare?"
+          : "Vill de återstående spelarna spela vidare?" })
+      ]),
+      el("div", { class: "group" }, [
+        label("I mål"),
+        el("div", { class: "panel rank-panel" }, doneRows)
+      ]),
+      remRows.length ? el("div", { class: "group" }, [
+        label("Kvar i spel"),
+        el("div", { class: "standings" }, remRows)
+      ]) : null
     ]),
-    el("div", { class: "panel rank-panel" }, doneRows),
-    remRows.length ? el("div", { class: "group" }, [
-      label("Kvar i spel"),
-      el("div", { class: "standings" }, remRows)
-    ]) : null,
     el("div", { class: "footer-actions", style: "background:transparent;position:relative" }, [
       el("button", { class: "btn btn-primary btn-block", style: "min-height:60px;font-size:20px;font-weight:800",
         text: "Spela vidare", onClick: continueGame }),
@@ -698,21 +745,36 @@ function renderSlut() {
   const rows = ranked.map((p, i) => el("div", { class: "rank-row" + (p.done ? " is-win" : "") }, [
     el("span", { class: "rank-pos", text: String(i + 1) }),
     el("span", { class: "rank-name", text: p.name }),
-    p.done ? el("span", { class: "st-tag is-done", text: "I mål" })
-      : p.out ? el("span", { class: "st-tag", text: "Utslagen" }) : null,
+    p.done ? el("span", { class: "st-tag is-done", text: (g.winners && g.winners.includes(p.id) ? "🏆 " : "") + "I mål" })
+      : p.out ? el("span", { class: "st-tag is-out", text: "Utslagen" }) : null,
     el("span", { class: "rank-score", text: p.score + " p" })
   ]));
 
   return el("section", { class: "scr slut" }, [
     el("div", { class: "blob blob-a" }), el("div", { class: "blob blob-b" }),
-    el("div", { class: "win-card" }, [
-      el("div", { class: "eyebrow", text: !winIds.length ? "Spelet avslutat" : shared ? "Delad vinst" : "Vinnare" }),
-      el("div", { class: "win-name", text: winnerName || "Ingen vinnare" }),
-      el("div", { class: "win-sub", text: winIds.length
-        ? (shared ? "Båda nådde " + g.max + " poäng. Grattis!" : "Först till " + g.max + " poäng på " + g.round + " omgångar. Grattis!")
-        : "Ingen nådde " + g.max + " poäng den här gången." })
+    el("div", { class: "body-scroll" }, [
+      el("div", { class: "win-card" }, [
+        el("div", { class: "eyebrow", text: !winIds.length ? "Spelet avslutat" : shared ? "Delad vinst" : "Vinnare" }),
+        el("div", { class: "win-name", text: winnerName || "Ingen vinnare" }),
+        el("div", { class: "win-sub", text: winIds.length
+          ? (shared ? "Båda nådde " + g.max + " poäng. Grattis!" : "Först till " + g.max + " poäng på " + g.round + " omgångar. Grattis!")
+          : "Ingen nådde " + g.max + " poäng den här gången." })
+      ]),
+      el("div", { class: "group" }, [
+        label("Resultat"),
+        el("div", { class: "panel rank-panel" }, rows)
+      ]),
+      g.log.length ? el("div", { class: "group" }, [
+        label("Kasthistorik"),
+        el("div", { class: "panel" }, g.log.map(t => el("div", { class: "log-row" }, [
+          el("span", { class: "log-round", text: "O" + t.round }),
+          el("span", { class: "log-name", text: t.name }),
+          el("span", { class: "log-pins", text: t.pins.length ? "kägla " + t.pins.join(", ") : "bom" }),
+          logTagEl(t.tag),
+          el("span", { class: "log-pts" + (t.points ? "" : " is-zero"), text: (t.points ? "+" + t.points : "0") + " → " + t.score + " p" })
+        ])))
+      ]) : null
     ]),
-    el("div", { class: "panel rank-panel" }, rows),
     el("div", { class: "footer-actions", style: "background:transparent;position:relative" }, [
       el("button", { class: "btn btn-primary btn-block cta-md", text: "Spela igen — samma lag",
         onClick: () => set({ game: newGame(), pins: [], banner: null, screen: "spel" }) }),
@@ -747,17 +809,28 @@ function renderSpelare() {
 
   const rows = state.roster.length ? state.roster.map(p => {
     if (state.renameId === p.id) {
-      const dup = state.renameName.trim() && nameTaken(state.renameName, p.id);
+      const isDup = v => !!(v.trim() && nameTaken(v, p.id));
+      const dup = isDup(state.renameName);
+      const avatar = el("span", { class: "avatar", text: initials(state.renameName || p.name) });
+      const warn = el("span", { class: "p-meta", style: "color:var(--color-accent-700)", text: "Namnet är upptaget" });
+      warn.hidden = !dup;
+      const saveBtn = el("button", { class: "row-action", text: "Spara", disabled: !!dup || !state.renameName.trim(), onClick: saveRename });
+      const input = el("input", { class: "input", type: "text", value: state.renameName, placeholder: "Namn",
+        "data-focus": "rename", name: "renameName", autocomplete: "off", maxlength: "18", "aria-invalid": String(!!dup),
+        onInput: e => {
+          const v = e.target.value;
+          setQuiet({ renameName: v });                 // persist without re-render
+          const d = isDup(v);
+          avatar.textContent = initials(v || p.name);
+          e.target.setAttribute("aria-invalid", String(!!d));
+          warn.hidden = !d;
+          saveBtn.disabled = !!d || !v.trim();
+        },
+        onKeydown: e => { if (e.key === "Enter") saveRename(); if (e.key === "Escape") set({ renameId: null, renameName: "" }); } });
       return el("div", { class: "p-row" }, [
-        el("span", { class: "avatar", text: initials(state.renameName || p.name) }),
-        el("div", { class: "p-main" }, [
-          el("input", { class: "input", type: "text", value: state.renameName, placeholder: "Namn",
-            "data-focus": "rename", maxlength: "18", "aria-invalid": String(!!dup),
-            onInput: e => set({ renameName: e.target.value, focusKey: "rename" }),
-            onKeydown: e => { if (e.key === "Enter") saveRename(); if (e.key === "Escape") set({ renameId: null, renameName: "" }); } }),
-          dup ? el("span", { class: "p-meta", style: "color:var(--color-accent-700)", text: "Namnet är upptaget" }) : null
-        ]),
-        el("button", { class: "row-action", text: "Spara", disabled: !!dup || !state.renameName.trim(), onClick: saveRename }),
+        avatar,
+        el("div", { class: "p-main" }, [input, warn]),
+        saveBtn,
         el("button", { class: "row-action is-quiet", text: "Avbryt", onClick: () => set({ renameId: null, renameName: "" }) })
       ]);
     }
@@ -788,18 +861,29 @@ function renderSpelare() {
         el("div", { class: "group-head" }, [label("Laget"), el("span", { class: "note", text: state.roster.length + " spelare" })]),
         el("div", { class: "panel" }, rows)
       ]),
-      el("div", { class: "group" }, [
-        label("Lägg till spelare"),
-        el("div", { class: "add-row" }, [
-          el("input", { class: "input", type: "text", placeholder: "Namn", value: state.newName,
-            "data-focus": "newName", maxlength: "18", "aria-invalid": String(!!dupNew),
-            onInput: e => set({ newName: e.target.value, focusKey: "newName" }),
-            onKeydown: e => { if (e.key === "Enter") add(); } }),
-          el("button", { class: "btn btn-primary", style: "min-height:52px;font-size:17px;padding:0 22px",
-            text: "Lägg till", disabled: !!dupNew || !state.newName.trim(), onClick: add })
-        ]),
-        dupNew ? el("div", { class: "note", style: "color:var(--color-accent-700)", text: "Namnet är redan upptaget — välj ett unikt namn." }) : null
-      ])
+      (() => {
+        const isDup = v => !!(v.trim() && nameTaken(v, null));
+        const addBtn = el("button", { class: "btn btn-primary", style: "min-height:52px;font-size:17px;padding:0 22px",
+          text: "Lägg till", disabled: !!dupNew || !state.newName.trim(), onClick: add });
+        const warn = el("div", { class: "note", style: "color:var(--color-accent-700)", text: "Namnet är redan upptaget — välj ett unikt namn." });
+        warn.hidden = !dupNew;
+        const input = el("input", { class: "input", type: "text", placeholder: "Namn", value: state.newName,
+          "data-focus": "newName", name: "newName", autocomplete: "off", maxlength: "18", "aria-invalid": String(!!dupNew),
+          onInput: e => {
+            const v = e.target.value;
+            setQuiet({ newName: v });                   // persist without re-render
+            const d = isDup(v);
+            e.target.setAttribute("aria-invalid", String(!!d));
+            warn.hidden = !d;
+            addBtn.disabled = !!d || !v.trim();
+          },
+          onKeydown: e => { if (e.key === "Enter") add(); } });
+        return el("div", { class: "group" }, [
+          label("Lägg till spelare"),
+          el("div", { class: "add-row" }, [input, addBtn]),
+          warn
+        ]);
+      })()
     ])
   ]);
 }
@@ -809,12 +893,12 @@ function renderSpelare() {
 function renderHistorik() {
   const cards = state.archive.length ? state.archive.map(a => el("div", { class: "arch-card" }, [
     el("div", { class: "arch-top" }, [
-      el("span", { class: "arch-winner", text: a.winnerName || "Ingen vinnare" }),
-      el("span", { class: "note", text: dateSv(a.date) })
+      el("span", { class: "arch-winner", text: a.winnerName ? "🏆 " + a.winnerName : "Ingen vinnare" }),
+      el("span", { class: "note", text: dateTimeSv(a.date) })
     ]),
     el("div", { class: "arch-meta", text: "Max " + a.max + " p · " + a.rounds + " omgångar · " + a.players.length + " spelare" }),
     el("div", { class: "arch-scores" }, a.players.slice().sort((x, y) => y.score - x.score).map(p =>
-      el("span", { class: "score-chip" + ((a.winners && a.winners.length ? a.winners.includes(p.id) : p.id === a.winner) ? " is-win" : ""), text: p.name + " " + p.score })))
+      el("span", { class: "score-chip" + ((a.winners && a.winners.length ? a.winners.includes(p.id) : p.id === a.winner) ? " is-win" : p.out ? " is-out" : ""), text: p.name + " " + p.score })))
   ])) : [empty("Inga färdigspelade matcher än. Vinnare hamnar här automatiskt.")];
 
   return el("section", { class: "scr" }, [
