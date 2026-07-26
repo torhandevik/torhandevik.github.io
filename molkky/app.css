@@ -1,0 +1,172 @@
+/* Mölkky app layer — sits on top of the Organic design system (organic.css).
+   Every value below comes from an Organic token; no new colors or radii. */
+
+html, body { margin: 0; background: var(--color-bg); font-family: var(--font-body); color: var(--color-text); }
+* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+#app { position: relative; width: 100%; max-width: 480px; min-height: 100vh; min-height: 100dvh; margin: 0 auto; overflow: hidden; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pop  { from { transform: scale(.86); } to { transform: scale(1); } }
+
+.scr { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; animation: rise .28s ease both; }
+
+/* ---------- Hem ---------- */
+.hem { justify-content: center; gap: 14px; padding: 64px 26px calc(40px + env(safe-area-inset-bottom)); }
+.blob { position: absolute; border-radius: 999px; pointer-events: none; }
+.blob-a { top: -70px; right: -60px; width: 230px; height: 230px; background: var(--color-accent-200); }
+.blob-b { bottom: -90px; left: -70px; width: 260px; height: 260px; background: var(--color-accent-2-200); }
+.hem > header, .hem > .resume-card, .hem > .btn { position: relative; }
+.wordmark { font-family: var(--font-heading); font-size: 62px; line-height: 1; }
+.tagline { font-size: 17px; color: var(--color-neutral-700); }
+.resume-card { background: var(--color-surface); border-radius: var(--radius-lg); padding: 20px 22px; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-sm); }
+.eyebrow { font-size: 14px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--color-accent-700); }
+.roster-line { font-size: 21px; font-weight: 700; }
+.cta-lg { min-height: 70px; font-size: 23px; font-weight: 800; }
+.cta-md { min-height: 58px; font-size: 18px; }
+.cta-sm { min-height: 52px; font-size: 17px; }
+
+/* ---------- Shared chrome ---------- */
+.topbar { display: flex; align-items: center; gap: 14px; padding: calc(22px + env(safe-area-inset-top)) 22px 14px; }
+.back { font-size: 26px; line-height: 1; color: var(--color-neutral-700); }
+.screen-title { font-family: var(--font-heading); font-size: 30px; }
+.body-scroll { flex: 1; overflow: auto; padding: 0 22px 8px; display: flex; flex-direction: column; gap: 16px; }
+.label { font-size: 14px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--color-neutral-700); }
+.footer-actions { padding: 12px 22px calc(26px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 8px; background: var(--color-bg); }
+
+/* ---------- Nytt spel ---------- */
+.chips { display: flex; flex-wrap: wrap; gap: 9px; }
+.chip { min-height: 44px; padding: 0 18px; border-radius: 999px; font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; transition: all .15s; background: var(--color-surface); color: var(--color-neutral-700); }
+.chip[aria-pressed="true"] { background: var(--color-accent); color: #fff; box-shadow: var(--shadow-sm); }
+.panel { background: var(--color-surface); border-radius: var(--radius-lg); padding: 8px 18px; }
+.order-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--color-divider); border-radius: var(--radius-md); transition: transform .12s ease, opacity .15s, box-shadow .15s, background .15s; }
+.order-row:last-child { border-bottom: none; }
+.order-row.dragging { opacity: .6; background: var(--color-surface); box-shadow: var(--shadow-md); border-bottom-color: transparent; }
+.order-row.drag-over { box-shadow: inset 0 2px 0 var(--color-accent); }
+.order-row.drag-over-after { box-shadow: inset 0 -2px 0 var(--color-accent); }
+.pos { width: 26px; height: 26px; border-radius: 999px; background: var(--color-accent); color: #fff; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.order-name { flex: 1; font-size: 19px; font-weight: 600; }
+.grip { font-size: 20px; color: var(--color-neutral-500); cursor: grab; touch-action: none; padding: 4px; margin: -4px; }
+.grip:active { cursor: grabbing; }
+.steppers { display: flex; gap: 12px; }
+.stepper { flex: 1; background: var(--color-surface); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; flex-direction: column; gap: 4px; }
+.stepper h4 { margin: 0; font-size: 13px; font-weight: 700; color: var(--color-neutral-700); }
+.stepper .row { display: flex; align-items: center; justify-content: space-between; }
+.stepper .val { font-family: var(--font-heading); font-size: 28px; }
+.stepper button { font-size: 24px; width: 32px; }
+.hint { text-align: center; font-size: 14px; color: var(--color-neutral-600); }
+.btn[disabled] { opacity: .45; pointer-events: none; }
+
+/* ---------- Spel ---------- */
+.game-top { display: flex; align-items: center; justify-content: space-between; padding: calc(20px + env(safe-area-inset-top)) 22px 10px; }
+.round { font-family: var(--font-heading); font-size: 24px; }
+.game-body { padding: 0 22px; display: flex; flex-direction: column; gap: 10px; flex: 1; overflow: hidden; }
+.turn { background: var(--color-accent-200); border-radius: var(--radius-lg); padding: 10px 20px; display: flex; align-items: center; gap: 12px; flex: none; }
+.turn .kicker { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--color-accent-700); }
+.turn .name { font-family: var(--font-heading); font-size: 32px; line-height: 1.1; flex: 1; }
+.turn .pts { font-size: 17px; font-weight: 700; color: var(--color-accent-800); }
+.standings { background: var(--color-surface); border-radius: var(--radius-lg); padding: 6px 18px; }
+.st-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--color-divider); }
+.st-row:last-child { border-bottom: none; }
+.st-row.is-out { opacity: .42; }
+.st-row.is-current { font-weight: 800; }
+.st-mark { width: 14px; color: var(--color-accent); font-size: 13px; }
+.st-name { flex: 1; font-size: 17px; font-weight: 600; }
+.st-row.is-current .st-name { font-weight: 800; }
+.st-tag { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; padding: 2px 9px; border-radius: 999px; background: var(--color-neutral-300); color: var(--color-neutral-700); }
+.st-tag.is-done { background: var(--color-accent-2-300); color: var(--color-accent-2-800); }
+.st-delta { font-size: 14px; font-weight: 800; color: var(--color-accent-700); }
+.st-score { font-family: var(--font-heading); font-size: 20px; min-width: 34px; text-align: right; }
+.banner { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 18px; border-radius: var(--radius-lg); font-size: 16px; font-weight: 700; color: var(--color-neutral-900); flex: none; background: transparent; }
+.banner.is-shown { animation: pop .2s ease; }
+.banner.tone-good, .banner.tone-calm { background: var(--color-neutral-200); }
+.banner.tone-warn { background: var(--color-accent-300); }
+.banner.tone-win  { background: var(--color-accent-2-200); }
+
+/* Pin keypad — Mölkky's real pin arrangement, back row first */
+.pins { display: flex; flex-direction: column; gap: 6px; align-items: center; flex: none; }
+.pin-row { display: flex; gap: 10px; justify-content: center; }
+.pin { width: 52px; height: 52px; flex: none; border-radius: 999px; font-family: var(--font-heading); font-size: 23px; display: flex; align-items: center; justify-content: center; transition: transform .12s, background .15s; background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-sm); }
+.pin[aria-pressed="true"] { background: var(--color-accent); color: #fff; transform: scale(1.04); box-shadow: 0 0 0 4px var(--color-accent-200), var(--shadow-md); }
+
+.throw-actions { padding: 10px 22px calc(26px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 9px; }
+.helper { font-size: 13px; text-align: center; color: var(--color-neutral-600); min-height: 18px; }
+.throw-row { display: flex; gap: 10px; }
+.btn-clear { min-height: 62px; font-size: 16px; padding: 0 18px; }
+.btn-register { flex: 1; min-height: 62px; font-size: 21px; font-weight: 800; }
+.btn-undo { min-height: 46px; font-size: 16px; }
+
+/* ---------- Shared list / group primitives (used by every secondary screen) ---------- */
+.group { display: flex; flex-direction: column; gap: 8px; }
+.group-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.note { font-size: 13px; color: var(--color-neutral-600); }
+.empty { padding: 22px 0; text-align: center; font-size: 15px; color: var(--color-neutral-600); text-wrap: pretty; }
+.row-action { min-height: 44px; padding: 0 14px; border-radius: 999px; font-size: 15px; font-weight: 700; color: var(--color-accent-700); background: var(--color-accent-100); transition: background .15s; }
+.row-action:hover { background: var(--color-accent-200); }
+.row-action:active { background: var(--color-accent-300); }
+.row-action.is-quiet { background: transparent; color: var(--color-neutral-600); }
+.row-action.is-quiet:hover { background: var(--color-neutral-200); }
+
+/* ---------- Ställning ---------- */
+.edit-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--color-divider); }
+.edit-row:last-child { border-bottom: none; }
+.edit-row.is-out { opacity: .55; }
+.edit-main { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.edit-name { font-size: 18px; font-weight: 700; }
+.adj { display: flex; align-items: center; gap: 4px; }
+.adj button { width: 44px; height: 44px; border-radius: 999px; font-size: 24px; background: var(--color-neutral-200); color: var(--color-text); }
+.adj button:hover { background: var(--color-neutral-300); }
+.adj-val { font-family: var(--font-heading); font-size: 22px; min-width: 38px; text-align: center; }
+.log-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--color-divider); font-size: 15px; }
+.log-row:last-child { border-bottom: none; }
+.log-round { font-size: 12px; font-weight: 800; letter-spacing: .04em; color: var(--color-neutral-600); min-width: 26px; }
+.log-name { font-weight: 700; min-width: 74px; }
+.log-pins { flex: 1; color: var(--color-neutral-700); }
+.log-pts { font-family: var(--font-heading); font-size: 18px; color: var(--color-accent-700); }
+.log-pts.is-zero { color: var(--color-neutral-500); }
+
+/* ---------- Slut ---------- */
+.slut { justify-content: center; gap: 16px; padding: 40px 26px calc(24px + env(safe-area-inset-bottom)); }
+.win-card { position: relative; background: var(--color-accent-2-200); border-radius: var(--radius-lg); padding: 26px 24px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-sm); animation: pop .24s ease; }
+.win-card .eyebrow { color: var(--color-accent-2-800); }
+.win-name { font-family: var(--font-heading); font-size: 44px; line-height: 1.05; }
+.win-sub { font-size: 16px; color: var(--color-accent-2-800); text-wrap: pretty; }
+.rank-panel { position: relative; padding: 6px 18px; }
+.rank-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--color-divider); }
+.rank-row:last-child { border-bottom: none; }
+.rank-pos { width: 26px; height: 26px; border-radius: 999px; background: var(--color-neutral-300); color: var(--color-neutral-800); font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.rank-row.is-win .rank-pos { background: var(--color-accent); color: #fff; }
+.rank-name { flex: 1; font-size: 18px; font-weight: 600; }
+.rank-row.is-win .rank-name { font-weight: 800; }
+.rank-score { font-family: var(--font-heading); font-size: 20px; }
+
+/* ---------- Spelare ---------- */
+.p-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--color-divider); }
+.p-row:last-child { border-bottom: none; }
+.avatar { width: 40px; height: 40px; flex: none; border-radius: 999px; background: var(--color-accent-2-300); color: var(--color-accent-2-800); font-family: var(--font-heading); font-size: 19px; display: flex; align-items: center; justify-content: center; }
+.p-main { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.p-name { font-size: 18px; font-weight: 700; }
+.p-meta { font-size: 13px; color: var(--color-neutral-600); }
+.add-row { display: flex; gap: 10px; }
+.add-row .input { flex: 1; min-height: 52px; font-size: 17px; }
+
+/* ---------- Historik ---------- */
+.arch-card { background: var(--color-surface); border-radius: var(--radius-lg); padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow-sm); }
+.arch-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.arch-winner { font-family: var(--font-heading); font-size: 24px; }
+.arch-meta { font-size: 14px; color: var(--color-neutral-700); }
+.arch-scores { display: flex; flex-wrap: wrap; gap: 6px; }
+.score-chip { padding: 4px 12px; border-radius: 999px; background: var(--color-neutral-200); color: var(--color-neutral-800); font-size: 14px; font-weight: 600; }
+.score-chip.is-win { background: var(--color-accent-200); color: var(--color-accent-800); font-weight: 800; }
+
+/* ---------- Inställningar ---------- */
+.sw-row { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--color-divider); text-align: left; width: 100%; }
+.sw-row:last-child { border-bottom: none; }
+.sw-main { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.sw-title { font-size: 17px; font-weight: 700; }
+.sw { width: 54px; height: 32px; flex: none; border-radius: 999px; background: var(--color-neutral-300); display: flex; align-items: center; padding: 3px; transition: background .18s; }
+.sw-knob { width: 26px; height: 26px; border-radius: 999px; background: #fff; box-shadow: var(--shadow-sm); transition: transform .18s ease; }
+.sw-row[aria-checked="true"] .sw { background: var(--color-accent); }
+.sw-row[aria-checked="true"] .sw-knob { transform: translateX(22px); }
