@@ -365,7 +365,7 @@ const logTagEl = tag => {
 };
 function render() {
   const screens = { hem: renderHem, nytt: renderNytt, spel: renderSpel, stallning: renderStallning,
-    rondslut: renderRondslut, slut: renderSlut, spelare: renderSpelare, historik: renderHistorik, installningar: renderInstallningar };
+    rondslut: renderRondslut, slut: renderSlut, spelare: renderSpelare, historik: renderHistorik, regler: renderRegler, installningar: renderInstallningar };
   const node = (screens[state.screen] || renderHem)();
   // Only play the entrance animation when the screen actually changes — not on
   // in-screen re-renders (chip toggles, steppers, etc.) — so the page doesn't jump.
@@ -399,6 +399,7 @@ function renderHem() {
     el("button", { class: "btn btn-primary btn-block cta-lg", text: "Nytt spel", onClick: () => set({ screen: "nytt" }) }),
     el("button", { class: "btn btn-secondary btn-block cta-md", text: "Spelare", onClick: () => set({ screen: "spelare" }) }),
     el("button", { class: "btn btn-secondary btn-block cta-md", text: "Historik", onClick: () => set({ screen: "historik" }) }),
+    el("button", { class: "btn btn-secondary btn-block cta-md", text: "Regler", onClick: () => set({ screen: "regler" }) }),
     el("button", { class: "btn btn-ghost btn-block cta-sm", text: "Inställningar", onClick: () => set({ screen: "installningar" }) })
   ]);
 }
@@ -619,7 +620,7 @@ function renderSpel() {
     const isCur = i === g.turn;
     const tag = statusTag(p);
     return el("div", { class: "st-row" + (p.out ? " is-out" : "") + (isCur ? " is-current" : "") }, [
-      el("span", { class: "st-mark", text: isCur ? "▶" : "" }),
+      el("span", { class: "rank-pos" + (isCur ? " is-current" : ""), text: String(i + 1) }),
       el("span", { class: "st-name", text: p.name }),
       tag ? el("span", { class: "st-tag" + tag.cls, text: tag.text }) : null,
       isCur && points > 0 ? el("span", { class: "st-delta", text: "+" + points }) : null,
@@ -693,6 +694,7 @@ function renderStallning() {
   const rows = g.players.map((p, i) => {
     const tag = statusTag(p);
     return el("div", { class: "edit-row" + (p.out ? " is-out" : "") }, [
+      el("span", { class: "rank-pos", text: String(i + 1) }),
       el("div", { class: "edit-main" }, [
         el("span", { class: "edit-name", text: p.name }),
         tag ? el("span", { class: "st-tag" + tag.cls, text: tag.text }) : null
@@ -972,6 +974,55 @@ function renderHistorik() {
       state.archive.length ? el("button", { class: "btn btn-ghost", style: "min-height:38px;font-size:15px", text: "Rensa",
         onClick: () => set({ archive: [] }) }) : null),
     el("div", { class: "body-scroll" }, cards)
+  ]);
+}
+
+/* ---------- Regler ---------- */
+
+function renderRegler() {
+  // Pin-setup diagram reuses the real layout (PIN_ROWS): back row first, 1-2 nearest.
+  const pinDiagram = el("div", { class: "regler-pins" }, PIN_ROWS.map(row =>
+    el("div", { class: "pin-row" }, row.map(n =>
+      el("span", { class: "regler-pin", text: String(n) })))));
+
+  const ruleCard = (title, body) => el("div", { class: "regler-card" }, [
+    el("h4", { class: "regler-h", text: title }),
+    el("p", { class: "regler-p", text: body })
+  ]);
+
+  return el("section", { class: "scr" }, [
+    topbar("Regler", () => set({ screen: "hem" })),
+    el("div", { class: "body-scroll" }, [
+
+      el("div", { class: "group" }, [
+        label("Ställ upp käglorna"),
+        el("div", { class: "panel" }, [
+          el("p", { class: "regler-p", text: "Placera de tolv käglorna tätt ihop i mönstret nedan, med käglorna 1 och 2 närmast kastaren. Kastlinjen är cirka 3–4 meter bort." }),
+          pinDiagram,
+          el("p", { class: "regler-note", text: "Efter varje kast reses fallna käglor där de landade — spelplanen glesnar allt eftersom." })
+        ])
+      ]),
+
+      el("div", { class: "group" }, [
+        label("Så räknas kasten"),
+        el("div", { class: "panel" }, [
+          ruleCard("En kägla faller", "Du får käglans siffra i poäng. Fäller du enbart käglan 12 får du 12 poäng."),
+          ruleCard("Flera käglor faller", "Du får lika många poäng som antalet fällda käglor. Fäller du käglorna 3 och 10 får du 2 poäng — inte 13."),
+          ruleCard("Bom", "Inget nedslag ger noll poäng och räknas som en bom.")
+        ])
+      ]),
+
+      el("div", { class: "group" }, [
+        label("Vinna spelet"),
+        el("div", { class: "panel" }, [
+          ruleCard("Först till målet", "Den som först når exakt målpoängen (standard 50) är i mål och vinner 🏆."),
+          ruleCard("Över målet", "Slår du över målpoängen åker du tillbaka till returpoängen (standard 25) och får fortsätta jaga målet."),
+          ruleCard("Tre bommar slår ut", "Med utslagsregeln på blir den som bommar tre gånger i rad utslagen. En träff nollställer bomräknaren. Är alla andra utslagna vinner den som är kvar — om hen hunnit få poäng."),
+          ruleCard("Spela vidare", "När någon gått i mål men fler är kvar kan laget välja att spela klart rundan för att kora tvåa, trea och så vidare. Vinnaren är redan bestämd.")
+        ])
+      ])
+
+    ])
   ]);
 }
 

@@ -145,6 +145,7 @@ button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2
 .rank-row:last-child { border-bottom: none; }
 .rank-pos { width: 26px; height: 26px; border-radius: 999px; background: var(--color-neutral-300); color: var(--color-neutral-800); font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
 .rank-row.is-win .rank-pos { background: var(--color-accent); color: #fff; }
+.rank-pos.is-current { background: var(--color-accent); color: #fff; }
 .rank-name { flex: 1; font-size: 18px; font-weight: 600; }
 .rank-row.is-win .rank-name { font-weight: 800; }
 .rank-score { font-family: var(--font-heading); font-size: 20px; }
@@ -178,3 +179,14 @@ button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2
 .sw-knob { width: 26px; height: 26px; border-radius: 999px; background: #fff; box-shadow: var(--shadow-sm); transition: transform .18s ease; }
 .sw-row[aria-checked="true"] .sw { background: var(--color-accent); }
 .sw-row[aria-checked="true"] .sw-knob { transform: translateX(22px); }
+
+/* ---------- Regler ---------- */
+.regler-pins { display: flex; flex-direction: column; gap: 8px; align-items: center; padding: 14px 0; }
+.regler-pins .pin-row { gap: 8px; }
+.regler-pin { width: 40px; height: 40px; flex: none; border-radius: 999px; font-family: var(--font-heading); font-size: 18px; display: flex; align-items: center; justify-content: center; background: var(--color-accent-100); color: var(--color-accent-800); box-shadow: var(--shadow-sm); }
+.regler-p { font-size: 15px; line-height: 1.5; color: var(--color-neutral-800); margin: 8px 0; }
+.regler-note { font-size: 13px; line-height: 1.45; color: var(--color-neutral-600); margin: 8px 0 4px; font-style: italic; }
+.regler-card { padding: 12px 0; border-bottom: 1px solid var(--color-divider); }
+.regler-card:last-child { border-bottom: none; }
+.regler-h { font-size: 16px; font-weight: 800; margin: 0 0 4px; }
+.regler-card .regler-p { margin: 0; }
