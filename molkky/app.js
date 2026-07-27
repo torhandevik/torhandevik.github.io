@@ -1020,6 +1020,17 @@ function renderRegler() {
           ruleCard("Tre bommar slår ut", "Med utslagsregeln på blir den som bommar tre gånger i rad utslagen. En träff nollställer bomräknaren. Är alla andra utslagna vinner den som är kvar — om hen hunnit få poäng."),
           ruleCard("Spela vidare", "När någon gått i mål men fler är kvar kan laget välja att spela klart rundan för att kora tvåa, trea och så vidare. Vinnaren är redan bestämd.")
         ])
+      ]),
+
+      el("div", { class: "group" }, [
+        label("Appen"),
+        el("div", { class: "panel" }, [
+          ruleCard("Data sparas i webbläsaren", "Alla spelare, historik och pågående spel sparas bara lokalt i den här webbläsaren på den här enheten. Rensar du webbläsarens data eller cache för sidan försvinner allt — det finns ingen molnkopia."),
+          ruleCard("Ingen inloggning, ingen server", "Appen fungerar helt offline. Inget skickas till någon server och inget konto behövs."),
+          ruleCard("En enhet i taget", "Eftersom allt sparas lokalt delas inte data mellan telefoner eller datorer. Spela och räkna på samma enhet under matchen."),
+          ruleCard("Ångra och rätta", "Ett felräknat kast kan ångras direkt i spelvyn, och du kan finjustera poängen under \u201CStällning\u201D."),
+          ruleCard("Installera som app", "Lägg till sidan på hemskärmen via webbläsarens meny för att köra den som en egen app i helskärm.")
+        ])
       ])
 
     ])
