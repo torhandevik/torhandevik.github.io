@@ -391,6 +391,7 @@ function renderHem() {
 
   return el("section", { class: "scr hem" }, [
     el("div", { class: "blob blob-a" }), el("div", { class: "blob blob-b" }),
+    el("img", { class: "hem-pins", src: "pins.png", width: "300", alt: "" }),
     el("header", { style: "display:flex;flex-direction:column;gap:6px;margin-bottom:8px" }, [
       el("h1", { class: "wordmark", text: "Mölkky", style: "margin:0" }),
       el("p", { class: "tagline", text: "Nummerkubb för hela laget — vi räknar, ni kastar.", style: "margin:0" })
